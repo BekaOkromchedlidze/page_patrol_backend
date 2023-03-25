@@ -1,6 +1,6 @@
 # This is a basic workflow will build docker image and push to docker registry when code is pushed to master
 
-name: Web-Scraper Builds
+name: PagePatrol Backend Builds
 
 # Controls when the workflow will run
 on:
@@ -38,4 +38,4 @@ jobs:
           context: .
           platforms: linux/arm64/v8,linux/amd64
           push: true
-          tags: okromcb2/web-scraper:latest
+          tags: okromcb2/page-patrol-backend:latest
