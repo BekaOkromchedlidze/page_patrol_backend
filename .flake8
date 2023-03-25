@@ -1,0 +1,9 @@
+[flake8]
+exclude = venv
+select = C,E,F,W,B,B950
+extend-ignore = E203, E501
+max-line-length = 88
+
+# B950: “try to respect --line-length, but don’t become crazy if you can’t” - will show warning instead
+# E501: Line too long
+# E203: Colons should not have any space before them

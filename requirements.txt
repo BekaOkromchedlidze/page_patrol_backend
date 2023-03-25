@@ -1,0 +1,13 @@
+azure-functions==1.13.3
+black==22.8.0
+docopt==0.6.2
+fastapi==0.79.1
+flake8==5.0.4
+ipython==8.4.0
+isort==5.10.1
+kwargs==1.0.1
+pip-chill==1.0.1
+pre-commit==2.20.0
+scrapydo==0.2.2
+uvicorn==0.18.2
+yarg==0.1.9
