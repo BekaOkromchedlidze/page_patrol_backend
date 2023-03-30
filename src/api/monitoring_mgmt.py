@@ -1,11 +1,11 @@
 from typing import Optional, Union
 
 from azure.data.tables import UpdateMode
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_azure_auth.user import User
 
 from ..auth_config import azure_scheme
-from ..models import UserInfo, WebsiteMonitor
+from ..models import ScrapeInterval, UserInfo, WebsiteMonitor
 from ..table_storage import website_monitoring_table_client
 
 router = APIRouter()
@@ -17,6 +17,7 @@ async def add_entry(
     url: str,
     xpath: str,
     search_string: str,
+    scrape_interval: int = Query(1, enum=ScrapeInterval),
     user: User = Depends(azure_scheme),
 ) -> dict[str, bool]:
     # Get user information from the authentication system
@@ -28,6 +29,7 @@ async def add_entry(
         url=url,
         xpath=xpath,
         search_string=search_string,
+        scrape_interval=scrape_interval,
         is_enabled=True,
         is_deleted=False,
     )
@@ -60,6 +62,7 @@ async def update_entry(
     url: Optional[str] = None,
     xpath: Optional[str] = None,
     search_string: Optional[str] = None,
+    scrape_interval: Optional[int] = Query(None, enum=ScrapeInterval),
     user: User = Depends(azure_scheme),
 ):
     # Get user information from the authentication system
@@ -75,6 +78,8 @@ async def update_entry(
         entry["xpath"] = xpath
     if search_string:
         entry["search_string"] = search_string
+    if scrape_interval:
+        entry["scrape_interval"] = scrape_interval
 
     # Update the entry with the new data
     website_monitoring_table_client.update_entity(mode=UpdateMode.REPLACE, entity=entry)
@@ -83,7 +88,7 @@ async def update_entry(
 
 
 # DELETE: Soft delete a monitoring entry
-@router.delete("/entry/{entry_id}", response_model=dict[str, bool])
+@router.delete("/website-monitor/{entry_id}", response_model=dict[str, bool])
 async def delete_entry(entry_id: str = Path(...), user: User = Depends(azure_scheme)):
     # Get user information from the authentication system
     user_info = await get_user_info(user)
@@ -101,7 +106,9 @@ async def delete_entry(entry_id: str = Path(...), user: User = Depends(azure_sch
 
 
 # PUT: Enable or disable a monitoring entry
-@router.put("/entry/{entry_id}/toggle", response_model=dict[str, Union[bool, str]])
+@router.put(
+    "/website-monitor/{entry_id}/toggle", response_model=dict[str, Union[bool, str]]
+)
 async def toggle_entry(entry_id: str = Path(...), user: User = Depends(azure_scheme)):
     # Get user information from the authentication system
     user_info = await get_user_info(user)
