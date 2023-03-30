@@ -1,15 +1,19 @@
+import logging
 from datetime import datetime, timedelta
 
+import pytz
 import scrapydo
 from azure.data.tables import UpdateMode
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
+from src.logger_config import setup_logger
 from src.spiders.xpath_spider import XpathSpider
 
 from ..table_storage import website_monitoring_table_client
 
 router = APIRouter()
+logger = setup_logger(__name__)
 
 
 # Given url, element_xpath and search_string, search for search_string within the element and return its HTML if found.
@@ -62,7 +66,10 @@ async def get_element_html(url: str, element_xpath: str, search_string: str):
 
 
 async def process_website_monitor():
-    now = datetime.utcnow()
+    logger.info("Starting process_website_monitor")
+
+    utc = pytz.UTC
+    now = datetime.utcnow().replace(tzinfo=utc)
 
     # Get all enabled and not deleted website_monitor entries
     entries = website_monitoring_table_client.query_entities(
@@ -70,6 +77,8 @@ async def process_website_monitor():
     )
 
     for entry in entries:
+        logger.info(f"Searching for: {entry['search_string']} on {entry['url']}")
+
         # Calculate the elapsed time since the last scrape attempt
         last_scrape_time = entry.get("last_scrape_time", None)
         if last_scrape_time:
@@ -89,7 +98,7 @@ async def process_website_monitor():
             )
 
             # Update the WebsiteMonitor entry with the last scrape event information
-            entry["last_scrape_time"] = datetime.utcnow()
+            entry["last_scrape_time"] = datetime.utcnow().replace(tzinfo=utc)
             entry["last_scrape_status"] = req_status
             entry["last_scrape_status_detail"] = req_status_detail
             entry["last_scrape_html_content"] = req_html_content
@@ -97,4 +106,9 @@ async def process_website_monitor():
             # Update the WebsiteMonitor entry in the table storage
             website_monitoring_table_client.update_entity(
                 mode=UpdateMode.REPLACE, entity=entry
+            )
+
+            # Log the result of processing each entry
+            logger.info(
+                f"Processed entry '{entry['url']}' with status '{req_status_detail}'"
             )
