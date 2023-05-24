@@ -10,6 +10,9 @@ class AuthConfig(BaseSettings):
     OPENAPI_CLIENT_ID: str = Field(default="", env="OPENAPI_CLIENT_ID")
     APP_CLIENT_ID: str = Field(default="", env="APP_CLIENT_ID")
     TENANT_ID: str = Field(default="", env="TENANT_ID")
+    COSMOSDB_CONNECTION_STRING: str = Field(
+        default="", env="COSMOSDB_CONNECTION_STRING"
+    )
 
     class Config:
         env_file = ".env"

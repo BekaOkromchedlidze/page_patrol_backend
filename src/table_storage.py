@@ -1,6 +1,8 @@
 from azure.data.tables import TableServiceClient
 
-connection_string = "UseDevelopmentStorage=true"
+from .auth_config import auth_config
+
+connection_string = auth_config.COSMOSDB_CONNECTION_STRING
 table_service = TableServiceClient.from_connection_string(conn_str=connection_string)
 
 
