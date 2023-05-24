@@ -1,3 +1,5 @@
+from datetime import datetime
+from operator import itemgetter
 from typing import Optional, Union
 
 from azure.data.tables import UpdateMode
@@ -26,6 +28,7 @@ async def add_entry(
     # Create a new WebsiteMonitor object with the given data
     website_monitor = WebsiteMonitor(
         PartitionKey=user_info.oid,
+        date_added=int(datetime.now().timestamp()),
         url=url,
         xpath=xpath,
         search_string=search_string,
@@ -49,9 +52,11 @@ async def get_entries(user: User = Depends(azure_scheme)):
     user_info = await get_user_info(user)
     # Query the table storage for entries belonging to the authenticated user
     entries = website_monitoring_table_client.query_entities(
-        query_filter=f"PartitionKey eq '{user_info.oid}' and is_deleted eq false"
+        query_filter=f"PartitionKey eq '{user_info.oid}' and is_deleted eq false",
     )
-    # Return the entries as a list of dictionaries
+    # Sort entries based on Timestamp in descending order
+    entries = sorted(entries, key=itemgetter("date_added"), reverse=True)
+
     return [dict(entry.items()) for entry in entries]
 
 

@@ -17,6 +17,7 @@ ScrapeInterval = [1, 5, 15, 30, 60, 240, 720, 1440]
 class WebsiteMonitor(BaseModel):
     PartitionKey: str
     RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    date_added: int
     url: str
     xpath: str
     search_string: str
