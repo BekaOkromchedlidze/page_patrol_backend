@@ -15,4 +15,4 @@ WORKDIR /app/web-scraper
 COPY ./src ./src
 
 # Set the command to run the uvicorn server.
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
+# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "80"]
