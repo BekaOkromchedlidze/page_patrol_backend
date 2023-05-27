@@ -14,7 +14,7 @@ class UserInfo(BaseModel):
 ScrapeInterval = [1, 5, 15, 30, 60, 240, 720, 1440]
 
 
-class WebsiteMonitor(BaseModel):
+class PagePatrol(BaseModel):
     PartitionKey: str
     RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
     date_added: int
@@ -28,3 +28,13 @@ class WebsiteMonitor(BaseModel):
     last_scrape_status: Optional[str] = None
     last_scrape_status_detail: Optional[str] = None
     last_scrape_html_content: Optional[str] = None
+
+
+class PatrolHistory(BaseModel):
+    PartitionKey: str
+    RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    page_patrol_id: str
+    scrape_time: datetime
+    scrape_status: str
+    scrape_status_detail: str
+    scrape_html_content: str
