@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 
 import pytz
@@ -122,6 +121,7 @@ class Scraper:
                 )
 
                 self.patrol_history_mgmt.record_scrape_history(
+                    entity["PartitionKey"],
                     entity["RowKey"],
                     entity["last_scrape_time"],
                     req_html_content,

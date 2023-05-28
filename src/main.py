@@ -41,6 +41,7 @@ scraper = Scraper(table_storage, patrol_history_management)
 
 app.include_router(scraper.router, dependencies=[Security(azure_scheme)])
 app.include_router(patrol_management.router)
+app.include_router(patrol_history_management.router)
 
 
 def setup_scheduler():
