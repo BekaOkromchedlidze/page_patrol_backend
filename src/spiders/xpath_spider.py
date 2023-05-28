@@ -22,7 +22,7 @@ class XpathSpider(Spider):
     def parse(self, response, **kwargs):
         web_element = response.xpath(self.xpath)
         # Find web element
-        if len(web_element.getall()) == 0:
+        if not web_element:
             yield {
                 "status": "web_element_not_found",
                 "status_detail": f"Could not find any web element from xpath: {self.xpath}"
@@ -38,12 +38,8 @@ class XpathSpider(Spider):
             }
 
         # Check if string exists within the web element
-        sel = Selector(text=web_element.get()).xpath("//*")
-        if (
-            len(sel.xpath(f"//*[contains(text(), '{self.search_string}')]").getall())
-            > 0
-        ):
-            html_content = extract_inner_html_from_selector(web_element).replace(
+        if self.search_string_in_elements(web_element):
+            html_content = web_element.extract_first().replace(
                 'href="/', f'href="{self.base_url}/'
             )
             print(html_content)
@@ -59,14 +55,25 @@ class XpathSpider(Spider):
                 "html_content": "",
             }
 
+    def is_a_string_within_webelement(self, web_element):
+        sel = Selector(text=web_element.get()).xpath("//*")
+        if (
+            len(sel.xpath(f"//*[contains(text(), '{self.search_string}')]").getall())
+            > 0
+        ):
+            return True
+
+    def search_string_in_elements(self, element):
+        if self.is_a_string_within_webelement(element):
+            return True
+        else:
+            for child_element in element.xpath(".//*"):
+                if self.is_a_string_within_webelement(child_element):
+                    return True
+        return False
+
 
 def get_baseurl_from(url):
     parsed_uri = urlparse(url)
     result = "{uri.scheme}://{uri.netloc}".format(uri=parsed_uri)
     return result
-
-
-def extract_inner_html_from_selector(sel):
-    res_array = sel.get()
-    res = "".join(res_array)
-    return res
