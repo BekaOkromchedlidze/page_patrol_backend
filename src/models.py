@@ -32,9 +32,7 @@ class PagePatrol(BaseModel):
 
 class PatrolHistory(BaseModel):
     PartitionKey: str
-    RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
     page_patrol_id: str
+    RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
     scrape_time: datetime
-    scrape_status: str
-    scrape_status_detail: str
     scrape_html_content: str

@@ -5,6 +5,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Security
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.patrol_history_mgmt import PatrolHistoryManagement
 from src.api.patrol_mgmt import PatrolManagement
 from src.api.scraper import Scraper
 from src.auth_config import auth_config, azure_scheme
@@ -34,10 +35,12 @@ if auth_config.BACKEND_CORS_ORIGINS:
     )
 
 table_storage = TableStorage()
-scraper = Scraper(table_storage)
-monitoring_management = PatrolManagement(table_storage)
+patrol_management = PatrolManagement(table_storage)
+patrol_history_management = PatrolHistoryManagement(table_storage)
+scraper = Scraper(table_storage, patrol_history_management)
+
 app.include_router(scraper.router, dependencies=[Security(azure_scheme)])
-app.include_router(monitoring_management.router)
+app.include_router(patrol_management.router)
 
 
 def setup_scheduler():

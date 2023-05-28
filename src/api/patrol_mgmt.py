@@ -6,9 +6,9 @@ from azure.data.tables import UpdateMode
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi_azure_auth.user import User
 
-from ..auth_config import azure_scheme
-from ..models import PagePatrol, ScrapeInterval, UserInfo
-from ..table_storage import TableStorage
+from src.auth_config import azure_scheme
+from src.models import PagePatrol, ScrapeInterval, UserInfo
+from src.table_storage import TableStorage
 
 
 class PatrolManagement:
