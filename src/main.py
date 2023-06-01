@@ -1,5 +1,6 @@
 import os
 
+import uvicorn
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Security
@@ -10,6 +11,7 @@ from src.api.patrol_mgmt import PatrolManagement
 from src.api.scraper import Scraper
 from src.auth_config import auth_config, azure_scheme
 from src.table_storage import TableStorage
+from src.util.http_headers_manager import HttpHeadersManager
 
 app = FastAPI(
     swagger_ui_oauth2_redirect_url="/oauth2-redirect",
@@ -37,7 +39,8 @@ if auth_config.BACKEND_CORS_ORIGINS:
 table_storage = TableStorage()
 patrol_management = PatrolManagement(table_storage)
 patrol_history_management = PatrolHistoryManagement(table_storage)
-scraper = Scraper(table_storage, patrol_history_management)
+headers_manager = HttpHeadersManager()
+scraper = Scraper(table_storage, patrol_history_management, headers_manager)
 
 app.include_router(scraper.router, dependencies=[Security(azure_scheme)])
 app.include_router(patrol_management.router)
@@ -53,3 +56,7 @@ def setup_scheduler():
         replace_existing=True,
     )
     scheduler.start()
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

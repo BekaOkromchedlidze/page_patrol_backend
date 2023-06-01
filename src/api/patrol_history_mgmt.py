@@ -1,3 +1,4 @@
+import re
 import uuid
 from datetime import datetime
 from operator import itemgetter
@@ -36,7 +37,9 @@ class PatrolHistoryManagement:
         )
 
         if self.is_scrape_history_needed(page_patrol_id, scrape_html_content):
-            self.logger.info("Recording new HTML content")
+            self.logger.info(
+                f"page_patrol_id: {page_patrol_id} - Recording new HTML content"
+            )
             self.table_storage.create_entity(
                 self.table_storage.patrol_history_table_client,
                 entity=patrol_history.dict(),
@@ -54,10 +57,25 @@ class PatrolHistoryManagement:
             history_entities, key=itemgetter("scrape_time"), reverse=True
         )
 
-        if history_entities:
-            return history_entities[0].get("scrape_html_content") != scrape_html_content
+        if history_entities:  # Compare saved html with html scraped.
+            previously_recorded_html = str(
+                history_entities[0].get("scrape_html_content")
+            )
+
+            # Remove any reference of a token from htmls as these will generally always be different
+            token_regex_pattern = 'token="+\\S+"'
+            previously_recorded_html_without_token = re.sub(
+                token_regex_pattern, "", previously_recorded_html
+            )
+            scraped_html_without_token = re.sub(
+                token_regex_pattern, "", scrape_html_content
+            )
+            self.logger.info(
+                f"page_patrol_id: {page_patrol_id} - Scraped HTML is same as previously recorded"
+            )
+            return previously_recorded_html_without_token != scraped_html_without_token
         else:
-            return True
+            return False
 
     # Retrieve all patrol history for page patrol entity
     async def get_patrol_history(self, page_patrol_id: str):
