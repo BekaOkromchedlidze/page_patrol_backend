@@ -13,6 +13,7 @@ class AuthConfig(BaseSettings):
     COSMOSDB_CONNECTION_STRING: str = Field(
         default="", env="COSMOSDB_CONNECTION_STRING"
     )
+    EXPO_TOKEN: str = Field(default="", env="EXPO_TOKEN")
 
     class Config:
         env_file = ".env"

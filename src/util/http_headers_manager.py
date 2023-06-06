@@ -26,7 +26,21 @@ class HttpHeadersManager:
                     "request",
                     lambda request: get_pw_headers(request, url),
                 )
-                await page.goto(url, wait_until="networkidle", timeout=15000)
+                await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+
+                # list of common cookie acceptance texts
+                acceptance_texts = ["accept", "agree"]
+                buttons = await page.query_selector_all("button")
+
+                for button in buttons:
+                    for text in acceptance_texts:
+                        try:
+                            if text in (await button.inner_text()).lower():
+                                await button.click()
+                                break
+                        except Exception:
+                            # Catch any exception and keep running
+                            continue
 
                 pw_cookies = await context.cookies()
                 cookies_str = "; ".join(

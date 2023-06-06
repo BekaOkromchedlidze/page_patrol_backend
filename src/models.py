@@ -17,6 +17,7 @@ ScrapeInterval = [1, 5, 15, 30, 60, 240, 720, 1440]
 class PagePatrol(BaseModel):
     PartitionKey: str
     RowKey: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    expo_push_token: Optional[str] = None
     date_added: int
     url: str
     xpath: str

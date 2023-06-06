@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
 
 import pytz
 from azure.data.tables import UpdateMode
@@ -11,6 +10,7 @@ from src.api.patrol_history_mgmt import PatrolHistoryManagement
 from src.logger_config import setup_logger
 from src.table_storage import TableStorage
 from src.util.http_headers_manager import HttpHeadersManager
+from src.util.util import Utils
 
 
 class Scraper:
@@ -33,7 +33,7 @@ class Scraper:
         resp = await asession.get(url, headers=headers)  # type: ignore
 
         # Get base_url
-        base_url = self.get_baseurl_from(url)
+        base_url = Utils.get_baseurl_from(url)
 
         # Select the elements
         elements = resp.html.xpath(xpath)
@@ -156,19 +156,35 @@ class Scraper:
                     entity=entity,
                 )
 
-                self.patrol_history_mgmt.record_scrape_history(
-                    entity["PartitionKey"],
-                    entity["RowKey"],
-                    entity["last_scrape_time"],
-                    req_html_content,
-                )
+                # If scrape history is needed, record it and send push notification
+                if self.patrol_history_mgmt.is_scrape_history_needed(
+                    page_patrol_id=entity["RowKey"],
+                    scrape_html_content=req_html_content,
+                ):
+                    self.patrol_history_mgmt.record_scrape_history(
+                        entity["PartitionKey"],
+                        entity["RowKey"],
+                        entity["last_scrape_time"],
+                        req_html_content,
+                    )
+                    # Send push notification
+                    url = (
+                        Utils.get_baseurl_from(entity["url"])
+                        .replace("https://", "")
+                        .replace("www.", "")
+                    )
+                    await self.patrol_history_mgmt.send_push_notification(
+                        entity["expo_push_token"],
+                        "Patrol Success!",
+                        f"Patrol has found something on {url}",
+                    )
+                else:
+                    page_patrol_id = entity["RowKey"]
+                    self.logger.info(
+                        f"page_patrol_id: {page_patrol_id} - Scraped HTML is same as previously recorded"
+                    )
 
                 # Log the result of processing each entry
                 self.logger.info(
                     f"Processed entry '{entity['url']}' with status '{req_status_detail}'"
                 )
-
-    def get_baseurl_from(self, url: str):
-        parsed_uri = urlparse(url)
-        result = "{uri.scheme}://{uri.netloc}".format(uri=parsed_uri)
-        return result

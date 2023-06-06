@@ -28,6 +28,9 @@ class PatrolManagement:
             "/page-patrol/{page_patrol_id}/toggle",
             response_model=dict[str, Union[bool, str]],
         )(self.toggle_patrol_entity)
+        self.router.patch("/page-patrol/update-push-token", response_model=None)(
+            self.update_push_token
+        )
 
     # Add a new patrol entity
     async def add_page_patrol_entity(
@@ -36,6 +39,7 @@ class PatrolManagement:
         xpath: str,
         search_string: str,
         scrape_interval: int = Query(1, enum=ScrapeInterval),
+        expo_push_token: Optional[str] = None,
         user: User = Depends(azure_scheme),
     ) -> dict[str, bool]:
         # Get user information from the authentication system
@@ -49,6 +53,7 @@ class PatrolManagement:
             xpath=xpath,
             search_string=search_string,
             scrape_interval=scrape_interval,
+            expo_push_token=expo_push_token,
             is_enabled=True,
             is_deleted=False,
         )
@@ -116,14 +121,14 @@ class PatrolManagement:
 
     # Soft delete a patrol entity
     async def delete_patrol_entity(
-        self, patrol_entity_id: str = Path(...), user: User = Depends(azure_scheme)
+        self, page_patrol_id: str = Path(...), user: User = Depends(azure_scheme)
     ):
         # Get user information from the authentication system
         user_info = await self.get_user_info(user)
 
         # Get the patrol entity from the table storage
         entity = self.table_storage.get_entity(
-            self.table_storage.page_patrol_table_client, user_info.oid, patrol_entity_id
+            self.table_storage.page_patrol_table_client, user_info.oid, page_patrol_id
         )
         if not entity:
             raise HTTPException(status_code=404, detail="entity not found")
@@ -140,14 +145,15 @@ class PatrolManagement:
 
     # Enable or disable a patrol entity
     async def toggle_patrol_entity(
-        self, patrol_entity_id: str = Path(...), user: User = Depends(azure_scheme)
+        self, page_patrol_id: str = Path(...), user: User = Depends(azure_scheme)
     ):
         # Get user information from the authentication system
         user_info = await self.get_user_info(user)
         # Get the patrol entity from the table storage
         entity = self.table_storage.get_entity(
-            self.table_storage.page_patrol_table_client, user_info.oid, patrol_entity_id
+            self.table_storage.page_patrol_table_client, user_info.oid, page_patrol_id
         )
+        # TODO: entity not found excpetion needs improvement
         if not entity:
             raise HTTPException(status_code=404, detail="entity not found")
 
@@ -186,3 +192,20 @@ class PatrolManagement:
             mode=UpdateMode.REPLACE,
             entity=entity,
         )
+
+    async def update_push_token(
+        self, expo_push_token: str, user: User = Depends(azure_scheme)
+    ):
+        partition_key = (await self.get_user_info(user)).oid
+        entities = self.table_storage.query_entities(
+            self.table_storage.page_patrol_table_client,
+            query_filter=f"PartitionKey eq '{partition_key}' and is_deleted eq false",
+        )
+
+        for entity in entities:
+            entity["expo_push_token"] = expo_push_token
+            self.table_storage.update_entity(
+                self.table_storage.page_patrol_table_client,
+                entity=entity,
+                mode=UpdateMode.REPLACE,
+            )
